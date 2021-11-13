@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Threading;
 
 namespace NeuralNet1
 {
@@ -9,35 +9,47 @@ namespace NeuralNet1
     {
         static void Main(string[] args)
         {
+            DateTime start = DateTime.Now;
             Random r = new Random();
-            int[] dimensions = {2,1};
+            int[] dimensions = {4,1};
             manager manage = new manager(dimensions);
+            double[] constants = { 3, 2, 5, 2100, 69 };
             Console.WriteLine("Hello World!");
-            for (int k = 0; k <20000; k++)
+            for (int k = 0; k <10000; k++)
             {
                 //one batch
-                double[,] batchVals = new double[3, 100];
-                for (int i = 0; i < 100; i++)
+                
+                double[,] batchVals = new double[dimensions[0]+1, 1000];
+
+                for (int i = 0; i < batchVals.GetLength(1); i++)
                 {
-                    double xVal = r.NextDouble() * 5;
-                    double yVal = r.NextDouble() * 5;
-                    double goal = xVal * 3 + yVal * 2; //define equation
-                    double[] input = { xVal, yVal };
+                    double goal = 0;
+                    double[] input = new double[dimensions[0]];
+                    for (int j = 0; j < input.Length; j++)
+                    {
+                        input[j] = r.NextDouble() * 5;
+                        goal += input[j] * constants[j];
+                    }
+                    goal += constants[constants.Length-1];
                     //Console.WriteLine("X = " + xVal);
                     //Console.WriteLine("Y = " + yVal);
                     manage.forwardPropogate(input);
                     manage.getLoss(goal);
                     double[] properties = manage.getDerivatesFromInput(goal);
-                    batchVals[0, i] = properties[0];
-                    batchVals[1, i] = properties[1];
-                    batchVals[2, i] = properties[2];
+
+                    for (int l = 0; l < batchVals.GetLength(0)-1; l++)
+                    {
+                        batchVals[l, i] = properties[l];
+                    }
+                    batchVals[batchVals.GetLength(0) - 1, i] = properties[properties.Length - 1];
                 }
 
                 manage.updateParameters(manage.trainingBatch(batchVals));
-                manage.printParams();
+                manage.printParams(dimensions[0]);
             }
 
-
+            DateTime end = DateTime.Now;
+            Console.WriteLine(end-start);
         }
     }
 
@@ -71,66 +83,52 @@ namespace NeuralNet1
         }
         public void forwardPropogate(double[] inputs)
         {
-            if(topology.Count == 2)
+            for (int i = 0; i < topology[0].Count; i++)
             {
-                for (int i = 0; i < topology[0].Count; i++)
+                topology[0][i].setInput(inputs[i]);
+            }
+            for (int i = 1; i < topology.Count; i++)
+            {
+                //loop through layer 1 - x
+                for (int j = 0; j < topology[i].Count; j++)
                 {
-                    topology[0][i].setInput(inputs[i]);
-                }
-                for (int i = 0; i < topology[1].Count; i++)
-                {
-                    double[] w = getWeights(0, i);
-                    double[] act = getActivation(0);
+                    double[] w = getWeights(i-1, j);
+                    double[] act = getActivation(i-1);
                     //for every output neuron get the weights of every neuron going into it
                     // weights of all nodes in prev layer
-                   //activations of all nodes in previous layer                   
-                    topology[1][i].calculateActivation(w, act);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < topology[0].Count; i++)
-                {
-                    topology[0][i].setInput(inputs[i]);
-                }
-                for (int i = 1; i < topology.Count; i++)
-                {
-                    //loop through layer 1 - x
-                    for (int j = 0; j < topology[i].Count; j++)
-                    {
-                        double[] w = getWeights(i-1, j);
-                        double[] act = getActivation(i-1);
-                        //for every output neuron get the weights of every neuron going into it
-                        // weights of all nodes in prev layer
-                        //activations of all nodes in previous layer                   
-                        topology[j][i].calculateActivation(w, act);
+                    //activations of all nodes in previous layer                   
+                    topology[i][j].calculateActivation(w, act);
 
 
-                    }
                 }
             }
+            
         }
 
         public double[] getDerivatesFromInput(double goalValue)
         {
+            double[] parameters = new double[topology[0].Count+1];
             double aL = topology[1][0].activation;
             double loss = Math.Pow(goalValue - aL, 2);
-
-            double weightX = topology[0][0].weights[0];
+            for (int i = 0; i < topology[0].Count; i++)
+            {
+                //double weighti = topology[0][i].weights[0];
+                double previ = topology[0][i].activation;
+                double derCostToWeighti = 2 * previ * (goalValue - aL);
+                parameters[i] = derCostToWeighti;
+            }
+            parameters[parameters.Length - 1] = 2 * (goalValue - aL);
+            /*double weightX = topology[0][0].weights[0];
             double weightY = topology[0][1].weights[0];
             double aLPrevX = topology[0][0].activation;
             double aLPrevY = topology[0][1].activation;
 
             double derCostToWeightX = 2 * aLPrevX * (goalValue - aL); //der respect to weightX
-            double derCostToWeightY = 2 * aLPrevY * (goalValue - aL); //der respect to weightY
+            double derCostToWeightY = 2 * aLPrevY * (goalValue - aL); //der respect to weightY*/
 
             //double derCostToActivationX = 2 * weightX * (aL - goalValue); //unneeded for 2 layers
             //double derCostToActivationY = 2 * weightY * (aL - goalValue);
-
-            double derCostToBias = 2 * (goalValue - aL);
-
-            double[] myArray = { derCostToWeightX, derCostToWeightY, derCostToBias };
-            return myArray;
+            return parameters;
 
         }
 
@@ -153,9 +151,13 @@ namespace NeuralNet1
         }
         public void updateParameters(double[] parameters)
         {
-            topology[0][0].weights[0] += parameters[0];
-            topology[0][1].weights[0] += parameters[1];
-            topology[1][0].bias += parameters[2];
+            for (int i = 0; i < parameters.Length-1; i++)
+            {
+                topology[0][i].weights[0] += parameters[i];
+            }
+            /*topology[0][0].weights[0] += parameters[0];
+            topology[0][1].weights[0] += parameters[1];*/
+            topology[1][0].bias += parameters[parameters.Length-1];
         }
         public double step(double val)
         {
@@ -191,11 +193,13 @@ namespace NeuralNet1
             return act;
 
         }
-        public void printParams()
+        public void printParams(int numOfParams)
         {
-            Console.WriteLine("X weight: " + topology[0][0].weights[0]);
-            Console.WriteLine("Y weight: " + topology[0][1].weights[0]);
-            Console.WriteLine("Bias: " + topology[1][0].bias);
+            for (int i = 0; i < numOfParams; i++)
+            {
+                Console.WriteLine(" Weight " + i + " = " + topology[0][i].weights[0]);
+            }
+            Console.WriteLine(" Bias = " + topology[1][0].bias);
         }
 
 
