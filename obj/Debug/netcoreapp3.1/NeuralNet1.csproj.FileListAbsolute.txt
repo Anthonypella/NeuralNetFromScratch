@@ -1,0 +1,14 @@
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\bin\Debug\netcoreapp3.1\NeuralNet1.exe
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\bin\Debug\netcoreapp3.1\NeuralNet1.deps.json
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\bin\Debug\netcoreapp3.1\NeuralNet1.runtimeconfig.json
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\bin\Debug\netcoreapp3.1\NeuralNet1.runtimeconfig.dev.json
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\bin\Debug\netcoreapp3.1\NeuralNet1.dll
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\bin\Debug\netcoreapp3.1\NeuralNet1.pdb
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.csproj.AssemblyReference.cache
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.AssemblyInfoInputs.cache
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.AssemblyInfo.cs
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.csproj.CoreCompileInputs.cache
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.dll
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.pdb
+C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.genruntimeconfig.cache
