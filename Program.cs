@@ -11,15 +11,15 @@ namespace NeuralNet1
         {
             DateTime start = DateTime.Now;
             Random r = new Random();
-            int[] dimensions = {4,1};
+            int[] dimensions = {8,1};
             manager manage = new manager(dimensions);
-            double[] constants = { 3, 2, 5, 2100, 69 };
+            double[] constants = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
             Console.WriteLine("Hello World!");
-            for (int k = 0; k <10000; k++)
+            for (int k = 0; k <100000; k++)
             {
                 //one batch
                 
-                double[,] batchVals = new double[dimensions[0]+1, 1000];
+                double[,] batchVals = new double[dimensions[0]+1, 5];
 
                 for (int i = 0; i < batchVals.GetLength(1); i++)
                 {
@@ -46,10 +46,16 @@ namespace NeuralNet1
 
                 manage.updateParameters(manage.trainingBatch(batchVals));
                 manage.printParams(dimensions[0]);
+                if (manage.checkAccuracy(constants))
+                {
+                    Console.WriteLine("iterations ran = " + k);
+                    Console.WriteLine("iterations * batch = " + k * batchVals.GetLength(1));
+                    DateTime end = DateTime.Now;
+                    Console.WriteLine(end - start);
+                    break;
+                }
             }
 
-            DateTime end = DateTime.Now;
-            Console.WriteLine(end-start);
         }
     }
 
@@ -161,7 +167,7 @@ namespace NeuralNet1
         }
         public double step(double val)
         {
-            return val / 100;
+            return val / 52.5;
         }
         public double getLoss(double goalValue)
         {
@@ -202,6 +208,21 @@ namespace NeuralNet1
             Console.WriteLine(" Bias = " + topology[1][0].bias);
         }
 
+        public bool checkAccuracy(double[] goals)
+        {
+            for (int i = 0; i < goals.Length-1; i++)
+            {
+                if (Math.Abs(goals[i] - topology[0][i].weights[0]) > .00001)
+                {
+                    return false;
+                }
+            }
+            if (Math.Abs(topology[1][0].bias - goals[goals.Length-1]) > .00001)
+            {
+                return false;
+            }
+            return true;
+        }
 
     }
 
