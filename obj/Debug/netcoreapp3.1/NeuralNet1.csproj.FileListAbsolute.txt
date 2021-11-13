@@ -12,3 +12,16 @@ C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet
 C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.dll
 C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.pdb
 C:\Users\Anthony Pella\Dev\Research\NeuralNet1\obj\Debug\netcoreapp3.1\NeuralNet1.genruntimeconfig.cache
+C:\Users\jason\Desktop\NeuralNet\bin\Debug\netcoreapp3.1\NeuralNet1.exe
+C:\Users\jason\Desktop\NeuralNet\bin\Debug\netcoreapp3.1\NeuralNet1.deps.json
+C:\Users\jason\Desktop\NeuralNet\bin\Debug\netcoreapp3.1\NeuralNet1.runtimeconfig.json
+C:\Users\jason\Desktop\NeuralNet\bin\Debug\netcoreapp3.1\NeuralNet1.runtimeconfig.dev.json
+C:\Users\jason\Desktop\NeuralNet\bin\Debug\netcoreapp3.1\NeuralNet1.dll
+C:\Users\jason\Desktop\NeuralNet\bin\Debug\netcoreapp3.1\NeuralNet1.pdb
+C:\Users\jason\Desktop\NeuralNet\obj\Debug\netcoreapp3.1\NeuralNet1.csproj.AssemblyReference.cache
+C:\Users\jason\Desktop\NeuralNet\obj\Debug\netcoreapp3.1\NeuralNet1.AssemblyInfoInputs.cache
+C:\Users\jason\Desktop\NeuralNet\obj\Debug\netcoreapp3.1\NeuralNet1.AssemblyInfo.cs
+C:\Users\jason\Desktop\NeuralNet\obj\Debug\netcoreapp3.1\NeuralNet1.csproj.CoreCompileInputs.cache
+C:\Users\jason\Desktop\NeuralNet\obj\Debug\netcoreapp3.1\NeuralNet1.dll
+C:\Users\jason\Desktop\NeuralNet\obj\Debug\netcoreapp3.1\NeuralNet1.pdb
+C:\Users\jason\Desktop\NeuralNet\obj\Debug\netcoreapp3.1\NeuralNet1.genruntimeconfig.cache
