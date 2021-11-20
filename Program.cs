@@ -78,11 +78,12 @@ namespace NeuralNet1
         }
         public void initialize()
         {
-            for (int i = 0; i < topology.Count-1; i++) //loop through layers, last has no weights
+
+            for (int i = 1; i < topology.Count; i++) //loop through layers, last has no weights
             {
                 for (int j = 0; j < topology[i].Count; j++) //loop through each layer
                 {
-                    topology[i][j].setWeightsRandom(topology[i + 1].Count); // creates # of random weights equal to next layer
+                    topology[i][j].setWeightsRandom(topology[i - 1].Count); // creates # of random weights equal to next layer
                 }
                 
             }
@@ -98,12 +99,11 @@ namespace NeuralNet1
                 //loop through layer 1 - x
                 for (int j = 0; j < topology[i].Count; j++)
                 {
-                    double[] w = getWeights(i-1, j);
                     double[] act = getActivation(i-1);
                     //for every output neuron get the weights of every neuron going into it
                     // weights of all nodes in prev layer
                     //activations of all nodes in previous layer                   
-                    topology[i][j].calculateActivation(w, act);
+                    topology[i][j].calculateActivation(topology[i][j].weights, act);
 
 
                 }
@@ -111,7 +111,58 @@ namespace NeuralNet1
             
         }
 
-        public double[] getDerivatesFromInput(double goalValue)
+        public double[,] getDerivativesOfWeightsAndBiasesForLayer(int layer, double[] prevDerActivationVector) //could return a as well
+        {
+            double[,] weightNeuronMatrix = new double[topology[layer].Count, topology[layer][0].weights.Length+1];
+            for (int i = 0; i < topology[layer].Count; i++)
+            {
+                for (int j = 0; j < topology[layer][i].weights.Length; j++)
+                {
+                    double dzdw = topology[layer - 1][j].activation;
+                    double dadz = topology[layer][i].sigmoidPrime();
+                    double dcda = prevDerActivationVector[i];
+                    weightNeuronMatrix[i,j] = dzdw * dadz * dcda;
+                }
+                weightNeuronMatrix[i, topology[layer][0].weights.Length] = topology[layer][i].sigmoidPrime() * prevDerActivationVector[i];
+            }
+            return weightNeuronMatrix;
+        }
+
+        public double[] getDerOfLoss(double[] goalVector) //calculate output layer's activation derivatives
+        {
+            int outputLayerLength = topology[topology.Count - 1].Count;
+            double[] derActivationVector = new double[outputLayerLength];
+            for (int i = 0; i < outputLayerLength; i++)
+            {
+                derActivationVector[i] = 2 * (topology[outputLayerLength][i].activation - goalVector[i]);
+
+            }
+            return derActivationVector;
+        }
+
+        public double[] getActivationDerivativeForHiddenLayer(int layerNum, double[] prevDerActivationVector)
+        {
+            int lengthOfForwardLayer = topology[layerNum + 1].Count;
+            int lengthOfThisLayer = topology[layerNum].Count;
+            double[] derActivationVector = new double[lengthOfThisLayer];
+
+            for (int i = 0; i < lengthOfThisLayer; i++)
+            {
+                double sum = 0;
+                for (int j = 0; j < lengthOfForwardLayer; j++)
+                {
+                    double dzda = topology[layerNum + 1][j].weights[i];
+                    double dadz = topology[layerNum + 1][j].sigmoidPrime();
+                    double dcdaL = prevDerActivationVector[j];
+                    sum += dcdaL * dadz * dzda;
+                }
+                sum /= lengthOfForwardLayer;
+                derActivationVector[i] = sum;
+            }
+            return derActivationVector;
+        }
+
+        /*public double[] getDerivatesFromInput(double[] goalValues)
         {
             double[] parameters = new double[topology[0].Count+1];
             double aL = topology[1][0].activation;
@@ -130,13 +181,13 @@ namespace NeuralNet1
             double aLPrevY = topology[0][1].activation;
 
             double derCostToWeightX = 2 * aLPrevX * (goalValue - aL); //der respect to weightX
-            double derCostToWeightY = 2 * aLPrevY * (goalValue - aL); //der respect to weightY*/
+            double derCostToWeightY = 2 * aLPrevY * (goalValue - aL); //der respect to weightY
 
             //double derCostToActivationX = 2 * weightX * (aL - goalValue); //unneeded for 2 layers
             //double derCostToActivationY = 2 * weightY * (aL - goalValue);
             return parameters;
 
-        }
+        }*/
 
         public double[] trainingBatch(double[,] trainingData) //inputs one batch
         {
@@ -155,15 +206,14 @@ namespace NeuralNet1
             }
             return averages;
         }
-        public void updateParameters(double[] parameters)
+        public void updateParameters(double[] parameters, int layerNum)
         {
-            for (int i = 0; i < parameters.Length-1; i++)
+            for (int i = 0; i < topology[layerNum].Count; i++)
             {
-                topology[0][i].weights[0] += parameters[i];
+                topology[layerNum][i].weights = manager.addArray(topology[layerNum][i].weights, parameters);
+                topology[layerNum][i].bias += parameters[parameters.Length - 1];
             }
-            /*topology[0][0].weights[0] += parameters[0];
-            topology[0][1].weights[0] += parameters[1];*/
-            topology[1][0].bias += parameters[parameters.Length-1];
+
         }
         public double step(double val)
         {
@@ -224,6 +274,16 @@ namespace NeuralNet1
             return true;
         }
 
+        public static double[] addArray(double[] array1, double[] array2, int subtractLength = 0)
+        {
+            for (int i = 0; i < array1.Length - subtractLength; i++)
+            {
+                
+                array1[i] += array2[i];
+            }
+            return array1;
+        }
+
     }
 
 
@@ -233,6 +293,7 @@ namespace NeuralNet1
         public double activation;
         public double[] weights;
         public double bias;
+        public double zValue;
         public neuron() { }
         public void setWeightsRandom(int numberOfWeights)
         {
@@ -253,18 +314,23 @@ namespace NeuralNet1
             reset();
             for (int i = 0; i < ws.Length; i++)
             {
-                activation += ws[i] * activations[i];
+                zValue += ws[i] * activations[i];
             }
-            activation += bias;
-            //activation = sigmoid(activation);
+            zValue += bias;
+            activation = sigmoid(zValue);
         }
         public void reset()
         {
-            activation = 0;
+            zValue = 0;
         }
-        static double sigmoid(double val)
+        public double sigmoid(double val)
         {
-            return Math.Exp(val) / (1 + Math.Exp(val));
+            return 1 / (1 + Math.Exp(-val));
+        }
+
+        public double sigmoidPrime()
+        {
+            return sigmoid(zValue) * (1 - sigmoid(zValue));
         }
 
     }
@@ -272,9 +338,8 @@ namespace NeuralNet1
     {
         public outputNeuron() { }
     }
-    
-
 
 
 
 }
+
