@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-
+using MNIST.IO;
+using System.Linq;
 namespace NeuralNet1
 {
 
@@ -9,13 +10,30 @@ namespace NeuralNet1
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("hello world");
             DateTime start = DateTime.Now;
             Random r = new Random();
             int[] dimensions = { 784, 16, 16, 10 };
             manager manage = new manager(dimensions);
 
+            string trainDataPath = "C:\\Users\\jason\\Desktop\\mnistdata\\train-images-idx3-ubyte.gz";
+            string trainLabelPath = "C:\\Users\\jason\\Desktop\\mnistdata\\train-labels-idx1-ubyte.gz";
+            string testDataPath = "C:\\Users\\jason\\Desktop\\mnistdata\\t10k-images-idx3-ubyte.gz";
+            string testLabelPath = "C:\\Users\\jason\\Desktop\\mnistdata\\t10k-labels-idx1-ubyte.gz";
+
+            var data = FileReaderMNIST.LoadImagesAndLables(trainLabelPath,trainDataPath);
+            Console.WriteLine("hello");
+
+            //TestCase[] testCases = data.ToArray();
+            foreach (var number in data)
+            {
+                Console.WriteLine(number.Label);
+                Console.WriteLine("hniggerrld");
+
+            }
+
             //get input
-            double[] input = new double[784];
+            /*double[] input = new double[784];
             double[] goalVector = new double[10];
 
             int batchSize = 10;
