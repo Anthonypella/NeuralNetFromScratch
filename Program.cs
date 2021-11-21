@@ -11,6 +11,53 @@ namespace NeuralNet1
         {
             DateTime start = DateTime.Now;
             Random r = new Random();
+            int[] dimensions = { 784, 16, 16, 10 };
+            manager manage = new manager(dimensions);
+
+            //get input
+            double[] input = new double[784];
+            double[] goalVector = new double[10];
+
+            int batchSize = 10;
+            int numBatches = 10;
+
+
+            for (int l = 0; l < numBatches; l++)
+            {
+                List<double[,]> gradientVectors = new List<double[,]>(); //each 2d array represents all the weights of the neurons on the layer, +1 for bias
+                for (int i = 1; i < dimensions.Length - 1; i++)
+                {
+                    double[,] layerArray = new double[dimensions[i], dimensions[i - 1] + 1];
+                    gradientVectors.Add(layerArray);
+                }
+
+                for (int j = 0; j < batchSize; j++)
+                {
+                    double[] propagatedDerOfLoss = manage.train(input, goalVector);
+                    for (int i = dimensions.Length - 1; i > 1; i--) //run for every layer except the input (since input has no previous activations)
+                    {
+                        gradientVectors[i] = manage.add2dArray(gradientVectors[i], manage.getDerivativesOfWeightsAndBiasesForLayer(i, propagatedDerOfLoss)); //add weights from previous activation derivative
+                        if (i >= 2) //don't apply to second to last layer, since there are no weights to update for the input layer
+                        {
+                            double[] propagatedDerOfLossResize = manage.getActivationDerivativeForHiddenLayer(i - 1, propagatedDerOfLoss); //calculate next propagation
+                            Array.Resize<double>(ref propagatedDerOfLoss, propagatedDerOfLossResize.Length); //resize propagationDerOfLoss to match the previous layer
+                            propagatedDerOfLoss = propagatedDerOfLossResize;
+                        }
+                    }
+                }
+
+                //average batch
+                manage.averageBatchVals(ref gradientVectors, batchSize);
+                manage.updateParameters(ref gradientVectors);
+                
+            }
+
+            DateTime end = DateTime.Now;
+            Console.WriteLine(end - start);
+
+
+
+            /*Random r = new Random();
             int[] dimensions = {8,1};
             manager manage = new manager(dimensions);
             double[] constants = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -54,7 +101,7 @@ namespace NeuralNet1
                     Console.WriteLine(end - start);
                     break;
                 }
-            }
+            }*/
 
         }
     }
@@ -88,11 +135,20 @@ namespace NeuralNet1
                 
             }
         }
-        public void forwardPropogate(double[] inputs)
+
+
+        public double[] train(double[] input, double[] goalVector)
+        {
+            forwardPropogate(input);
+            double[] output = getDerOfLoss(goalVector);
+            return output;
+        }
+
+        public void forwardPropogate(double[] input)
         {
             for (int i = 0; i < topology[0].Count; i++)
             {
-                topology[0][i].setInput(inputs[i]);
+                topology[0][i].setInput(input[i]);
             }
             for (int i = 1; i < topology.Count; i++)
             {
@@ -161,38 +217,10 @@ namespace NeuralNet1
             }
             return derActivationVector;
         }
-
-        /*public double[] getDerivatesFromInput(double[] goalValues)
-        {
-            double[] parameters = new double[topology[0].Count+1];
-            double aL = topology[1][0].activation;
-            double loss = Math.Pow(goalValue - aL, 2);
-            for (int i = 0; i < topology[0].Count; i++)
-            {
-                //double weighti = topology[0][i].weights[0];
-                double previ = topology[0][i].activation;
-                double derCostToWeighti = 2 * previ * (goalValue - aL);
-                parameters[i] = derCostToWeighti;
-            }
-            parameters[parameters.Length - 1] = 2 * (goalValue - aL);
-            /*double weightX = topology[0][0].weights[0];
-            double weightY = topology[0][1].weights[0];
-            double aLPrevX = topology[0][0].activation;
-            double aLPrevY = topology[0][1].activation;
-
-            double derCostToWeightX = 2 * aLPrevX * (goalValue - aL); //der respect to weightX
-            double derCostToWeightY = 2 * aLPrevY * (goalValue - aL); //der respect to weightY
-
-            //double derCostToActivationX = 2 * weightX * (aL - goalValue); //unneeded for 2 layers
-            //double derCostToActivationY = 2 * weightY * (aL - goalValue);
-            return parameters;
-
-        }*/
-
         public double[] trainingBatch(double[,] trainingData) //inputs one batch
         {
             double[] averages = new double[trainingData.GetLength(0)];
-            //training data.length is number of parameters in a batch, [0].length is length of a batch
+            //trainingData.GetLength(0) is number of parameters in a batch, trainingData.GetLength(1) is length of a batch
             for (int i = 0; i < trainingData.GetLength(0); i++)
             {
                 double sum = 0;
@@ -206,15 +234,38 @@ namespace NeuralNet1
             }
             return averages;
         }
-        public void updateParameters(double[] parameters, int layerNum)
-        {
-            for (int i = 0; i < topology[layerNum].Count; i++)
-            {
-                topology[layerNum][i].weights = manager.addArray(topology[layerNum][i].weights, parameters);
-                topology[layerNum][i].bias += parameters[parameters.Length - 1];
-            }
 
+        public void averageBatchVals(ref List<double[,]> gradientVectors, int batchCount)
+        {
+            for (int i = 0; i < gradientVectors.Count; i++) //for each layer
+            {
+                for (int j = 0; j < gradientVectors[i].GetLength(0); j++) //loop through each neuron
+                {
+                    for (int k = 0; k < gradientVectors[i].GetLength(1); k++) //for each weight
+                    {
+                        gradientVectors[i][j, k] /= batchCount;
+                        gradientVectors[i][j, k] = step(gradientVectors[i][j, k]);
+                    }
+
+                }
+            }
         }
+
+        public void updateParameters(ref List<double[,]> gradientVectors)
+        {
+            for (int i = 1; i < topology.Count; i++) //for each layer besides input
+            {
+                for (int j = 0; j < topology[i].Count; j++) //for each neuron in a layer
+                {
+                    for (int k = 0; k < topology[i][j].weights.Length; k++)
+                    {
+                        topology[i][j].weights[k] += gradientVectors[i][j, k];
+                    }
+                    topology[i][j].bias += gradientVectors[i][j, topology[i][j].weights.Length]; 
+                }
+            }
+        }
+
         public double step(double val)
         {
             return val / 52.5;
@@ -280,6 +331,18 @@ namespace NeuralNet1
             {
                 
                 array1[i] += array2[i];
+            }
+            return array1;
+        }
+
+        public double[,] add2dArray(double[,] array1, double[,] array2)
+        {
+            for (int i = 0; i < array1.GetLength(0); i++)
+            {
+                for (int j = 0; j < array1.GetLength(1); j++)
+                {
+                    array1[i,j] += array2[i,j];
+                }
             }
             return array1;
         }
