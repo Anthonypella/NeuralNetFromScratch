@@ -21,41 +21,41 @@ namespace NeuralNet1
             string testDataPath = "C:\\Users\\jason\\Desktop\\mnistdata\\t10k-images-idx3-ubyte.gz";
             string testLabelPath = "C:\\Users\\jason\\Desktop\\mnistdata\\t10k-labels-idx1-ubyte.gz";
 
-            var data = FileReaderMNIST.LoadImagesAndLables(trainLabelPath,trainDataPath);
+            var trainingData = FileReaderMNIST.LoadImagesAndLables(trainLabelPath, trainDataPath);
+            var testingData = FileReaderMNIST.LoadImagesAndLables(testLabelPath, testDataPath);
+
             Console.WriteLine("hello");
 
-            //TestCase[] testCases = data.ToArray();
-            foreach (var number in data)
-            {
-                Console.WriteLine(number.Label);
-                Console.WriteLine("hniggerrld");
 
-            }
+            TestCase[] trainingCases = trainingData.ToArray();
+            TestCase[] testingCases = testingData.ToArray();
 
             //get input
-            /*double[] input = new double[784];
-            double[] goalVector = new double[10];
 
-            int batchSize = 10;
-            int numBatches = 10;
+            int batchSize = 50;
+            int numEpochs = 3;
+            int numBatches = trainingCases.Length/batchSize * numEpochs;
 
 
             for (int l = 0; l < numBatches; l++)
             {
                 List<double[,]> gradientVectors = new List<double[,]>(); //each 2d array represents all the weights of the neurons on the layer, +1 for bias
-                for (int i = 1; i < dimensions.Length - 1; i++)
+                for (int i = 1; i < dimensions.Length; i++)
                 {
                     double[,] layerArray = new double[dimensions[i], dimensions[i - 1] + 1];
                     gradientVectors.Add(layerArray);
                 }
-
+                int randomPerterbation = r.Next(0, trainingCases.Length);
                 for (int j = 0; j < batchSize; j++)
                 {
+                    int randomBatchSize = (l * batchSize + j + randomPerterbation) % trainingCases.Length;
+                    double[] goalVector = manage.generateGoalArray(trainingCases[randomBatchSize].Label); //get goal vector from label in testcase array
+                    double[] input = trainingCases[randomBatchSize].outputImageAs1DArray(); //get image from testcase array
                     double[] propagatedDerOfLoss = manage.train(input, goalVector);
                     for (int i = dimensions.Length - 1; i > 1; i--) //run for every layer except the input (since input has no previous activations)
                     {
-                        gradientVectors[i] = manage.add2dArray(gradientVectors[i], manage.getDerivativesOfWeightsAndBiasesForLayer(i, propagatedDerOfLoss)); //add weights from previous activation derivative
-                        if (i >= 2) //don't apply to second to last layer, since there are no weights to update for the input layer
+                        gradientVectors[i-1] = manage.add2dArray(gradientVectors[i-1], manage.getDerivativesOfWeightsAndBiasesForLayer(i, propagatedDerOfLoss)); //add weights from previous activation derivative, i-1 because gradient is shifted relative to dimensions **make sure correct
+                        if (i >= 1) //don't apply to second to last layer, since there are no weights to update for the input layer
                         {
                             double[] propagatedDerOfLossResize = manage.getActivationDerivativeForHiddenLayer(i - 1, propagatedDerOfLoss); //calculate next propagation
                             Array.Resize<double>(ref propagatedDerOfLoss, propagatedDerOfLossResize.Length); //resize propagationDerOfLoss to match the previous layer
@@ -67,8 +67,40 @@ namespace NeuralNet1
                 //average batch
                 manage.averageBatchVals(ref gradientVectors, batchSize);
                 manage.updateParameters(ref gradientVectors);
-                
+
             }
+
+            //done training, start testing
+            double correctFirstHalf = 0;
+            double incorrectFirstHalf = 0;
+            for (int i = 0; i < testingCases.Length/2; i++)
+            {
+                if (manage.test(testingCases[i].outputImageAs1DArray(), testingCases[i].Label))
+                {
+                    correctFirstHalf++;
+                }
+                else
+                {
+                    incorrectFirstHalf++;
+                }
+            }
+
+            double correctSecondHalf = 0;
+            double incorrectSecondHalf = 0;
+            for (int i = testingCases.Length / 2; i < testingCases.Length; i++)
+            {
+                if (manage.test(testingCases[i].outputImageAs1DArray(), testingCases[i].Label))
+                {
+                    correctSecondHalf++;
+                }
+                else
+                {
+                    incorrectSecondHalf++;
+                }
+            }
+            Console.WriteLine("percentage correct first half: " + correctFirstHalf / (correctFirstHalf + incorrectFirstHalf));
+            Console.WriteLine("percentage correct second half: " + correctSecondHalf / (correctSecondHalf + incorrectSecondHalf));
+
 
             DateTime end = DateTime.Now;
             Console.WriteLine(end - start);
@@ -162,6 +194,26 @@ namespace NeuralNet1
             return output;
         }
 
+        public bool test(double[] input, int label)
+        {
+            forwardPropogate(input);
+            int indexOfMax = -1;
+            double max = 0;
+            for (int i = 0; i < topology[topology.Count-1].Count; i++)
+            {
+                if (topology[topology.Count - 1][i].activation > max)
+                {
+                    max = topology[topology.Count - 1][i].activation;
+                    indexOfMax = i;
+                }
+            }
+            if (indexOfMax == label)
+            {
+                return true;
+            }
+            return false;
+        }
+
         public void forwardPropogate(double[] input)
         {
             for (int i = 0; i < topology[0].Count; i++)
@@ -208,7 +260,7 @@ namespace NeuralNet1
             double[] derActivationVector = new double[outputLayerLength];
             for (int i = 0; i < outputLayerLength; i++)
             {
-                derActivationVector[i] = 2 * (topology[outputLayerLength][i].activation - goalVector[i]);
+                derActivationVector[i] = 2 * (topology[topology.Count-1][i].activation - goalVector[i]);
 
             }
             return derActivationVector;
@@ -277,16 +329,16 @@ namespace NeuralNet1
                 {
                     for (int k = 0; k < topology[i][j].weights.Length; k++)
                     {
-                        topology[i][j].weights[k] += gradientVectors[i][j, k];
+                        topology[i][j].weights[k] += gradientVectors[i-1][j, k];
                     }
-                    topology[i][j].bias += gradientVectors[i][j, topology[i][j].weights.Length]; 
+                    topology[i][j].bias += gradientVectors[i-1][j, topology[i][j].weights.Length]; 
                 }
             }
         }
 
         public double step(double val)
         {
-            return val / 52.5;
+            return val / 100;
         }
         public double getLoss(double goalValue)
         {
@@ -297,6 +349,21 @@ namespace NeuralNet1
             //Console.WriteLine("Loss was: " + loss);
             return loss;
         }
+
+        public double[] generateGoalArray(int label)
+        {
+            double[] goalVector = new double[topology[topology.Count - 1].Count];
+            for (int i = 0; i < goalVector.Length; i++)
+            {
+                goalVector[i] = 0;
+                if (i == label - 1)
+                {
+                    goalVector[i] = 1;
+                }
+            }
+            return goalVector;
+        }
+
         double[] getWeights(int layerNum,int targetNeuron)
         {
             double[] weights = new double[topology[layerNum].Count];
@@ -318,6 +385,8 @@ namespace NeuralNet1
             return act;
 
         }
+
+
         public void printParams(int numOfParams)
         {
             for (int i = 0; i < numOfParams; i++)
